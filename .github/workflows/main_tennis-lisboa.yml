@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Node.js version
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: '20.x'
 
@@ -31,7 +31,7 @@ jobs:
         run: zip release.zip ./* -r
 
       - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: node-app
           path: release.zip
@@ -54,7 +54,7 @@ jobs:
       
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v4
+        uses: azure/webapps-deploy@v2
         with:
           app-name: 'tennis-lisboa'
           slot-name: 'Production'
