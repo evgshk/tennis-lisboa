@@ -10,7 +10,7 @@ if (!telegramBotToken) {
   throw new Error("Missing environment variables");
 }
 
-const bot = new TelegramBot(telegramBotToken, { polling: false });
+const bot = new TelegramBot(telegramBotToken, { polling: true });
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
