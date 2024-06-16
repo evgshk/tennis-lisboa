@@ -110,3 +110,5 @@ bot.onText(/\/matchresult\s*(?:@?([^\s]+)\s*-\s*)?@?([^\s]+)\s+(\d+-\d+\s+\d+-\d
 
   bot.sendMessage(chatId, createMatchReportMessage(winner, loser, scores, eloResult), { parse_mode: 'Markdown' });
 });
+
+export default bot;
