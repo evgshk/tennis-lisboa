@@ -1,9 +1,10 @@
 import TelegramBot from 'node-telegram-bot-api';
-import { registerMe, sendMyStats, sendPlayerRatings } from './bot-actions';
+import { registerMe, sendMyStats, sendPlayerRatings } from './actions';
 import { calculateEloRating } from './elo';
 import { getPlayerByUsername, saveMatch, updateRatings } from './persistance/firebase';
 import { createMatchReportInfoMessage, createMatchReportMessage } from './common/message-builder';
 import { Player } from './common/models';
+import { parseScore } from './common/helpers';
 
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
 if (!telegramBotToken) {
@@ -11,6 +12,7 @@ if (!telegramBotToken) {
 }
 
 const bot = new TelegramBot(telegramBotToken, { polling: true });
+const userStates: { [key: number]: { step: string } } = {};
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
@@ -31,40 +33,101 @@ bot.onText(/\/start/, (msg) => {
   });
 });
 
-bot.on('callback_query', async (query) => {
-  const chatId = query.message?.chat.id as number;
+bot.onText(/\/mystats/, async (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from?.id || 0;
 
-  switch (query.data) {
-    case 'register_me':
-      if (query.from) {
-        const telegramId = query.from.id as number;
-        const telegramUsername = query.from.username || '';
-        const name = `${query.from?.first_name} ${query.from?.last_name}`;
+  await sendMyStats(bot, chatId, userId);
+});
 
-        await registerMe(bot, chatId, name, telegramId, telegramUsername);
-      }
-      break;
-    case 'view_ratings':
-      await sendPlayerRatings(bot, chatId);
-      break;
-    case 'report_match':
-      bot.sendMessage(chatId, createMatchReportInfoMessage(), {parse_mode: 'Markdown'});
-      break;
-    case 'my_stats':
-      if (query.from) {
-        const telegramId = query.from.id as number;
-        await sendMyStats(bot, chatId, telegramId);
-      }
-      break;
-    default:
-      bot.sendMessage(chatId, 'Unknown command');
+bot.onText(/\/ratings/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  await sendPlayerRatings(bot, chatId);
+});
+
+bot.onText(/\/matchresult(.*)/, (msg, match) => {
+  const chatId = msg.chat.id;
+
+  if (!match) {
+    bot.sendMessage(chatId, createMatchReportInfoMessage(), {parse_mode: 'Markdown'});
+    return;
+  }
+
+  const userId = msg.from?.id || 0;
+  const username = msg.from?.username || '';
+  const input = match[1].trim();
+
+  if (!input) {
+    userStates[userId] = { step: 'awaiting_match_details' };
+    bot.sendMessage(chatId, 'Please provide the match details with the next message in the format @opponentUsername 6-2 6-2 10-8');
+  } else {
+    handleMatchResultInput(chatId, username, input);
   }
 });
 
-bot.onText(/\/matchresult\s*(?:@?([^\s]+)\s*-\s*)?@?([^\s]+)\s+(\d+-\d+\s+\d+-\d+(?:\s+\d+-\d+)?)/, async (msg, match) => {
-  if (!match) return;
+const handleMatchResultInput = async (chatId: number, username: string, input: string): Promise<boolean> => {
+  const selfMatchRegex = /@(\w+)\s(\d+-\d+(\s\d+-\d+){0,2})/;
+  const otherMatchRegex = /@(\w+)\s-\s@(\w+)\s(\d+-\d+(\s\d+-\d+){0,2})/;
 
+  let playerUsername: string | undefined;
+  let opponentUsername: string | undefined;
+  let score: string | undefined;
+
+  let selfMatch = input.match(selfMatchRegex);
+  let match = input.match(otherMatchRegex);
+
+  if (selfMatch) {
+    [, opponentUsername, score] = selfMatch;
+    playerUsername = username; 
+  } else if (match) {
+    [, playerUsername, opponentUsername, score] = match;
+  } else {
+    bot.sendMessage(chatId, 'Invalid format. Please use:\n- @opponentUsername 6-2 6-2\n- @playerUsername - @opponentUsername 6-2 6-2 10-8');
+    return false;
+  }
+
+  if (!playerUsername || !opponentUsername || !score) {
+    bot.sendMessage(chatId, 'Invalid format. Please ensure you are using the correct format.');
+    return false;
+  }
+
+  // Process the match result, calculate new ELO ratings, update Firebase, etc.
+  try {
+    const player = await getPlayerByUsername(playerUsername);
+    const opponent = await getPlayerByUsername(opponentUsername);
+
+    if (!player || !opponent) {
+      console.log('One or both players not found.')
+      bot.sendMessage(chatId, 'One or both players not found.');
+      return false;
+    }
+
+    const matchResult = parseScore(player, opponent, score);
+    const eloResult = await calculateEloRating(matchResult.winner, matchResult.loser);
+
+    const matchRef = await saveMatch(matchResult.winner, matchResult.loser, matchResult.sets);
+    await updateRatings(matchResult.winner, matchResult.loser, eloResult, matchRef);
+
+    bot.sendMessage(chatId, createMatchReportMessage(matchResult.winner, matchResult.loser, score, eloResult), { parse_mode: 'Markdown' });
+
+    console.log('success');
+  } catch(error) {
+    console.log('failed');
+    return false;
+  }
+
+  return true;
+}
+
+bot.onText(/\/matchresult\s*(?:@?([^\s]+)\s*-\s*)?@?([^\s]+)\s+(\d+-\d+\s+\d+-\d+(?:\s+\d+-\d+)?)/, async (msg, match) => {
   const chatId = msg.chat.id;
+
+  if (!match) {
+    bot.sendMessage(chatId, createMatchReportInfoMessage(), {parse_mode: 'Markdown'});
+    return;
+  }
+  
   const reportingPlayerUsername = msg.from?.username;
   const playerUsername = match[1] ? match[1] : reportingPlayerUsername;
   const opponentUsername = match[2];
@@ -109,6 +172,51 @@ bot.onText(/\/matchresult\s*(?:@?([^\s]+)\s*-\s*)?@?([^\s]+)\s+(\d+-\d+\s+\d+-\d
   await updateRatings(winner, loser, eloResult, matchRef);
 
   bot.sendMessage(chatId, createMatchReportMessage(winner, loser, scores, eloResult), { parse_mode: 'Markdown' });
+});
+
+bot.on('callback_query', async (query) => {
+  const chatId = query.message?.chat.id as number;
+
+  switch (query.data) {
+    case 'register_me':
+      if (query.from) {
+        const telegramId = query.from.id as number;
+        const telegramUsername = query.from.username || '';
+        const name = `${query.from?.first_name} ${query.from?.last_name}`;
+
+        await registerMe(bot, chatId, name, telegramId, telegramUsername);
+      }
+      break;
+    case 'view_ratings':
+      await sendPlayerRatings(bot, chatId);
+      break;
+    case 'report_match':
+      bot.sendMessage(chatId, createMatchReportInfoMessage(), {parse_mode: 'Markdown'});
+      break;
+    case 'my_stats':
+      if (query.from) {
+        const telegramId = query.from.id as number;
+        await sendMyStats(bot, chatId, telegramId);
+      }
+      break;
+    default:
+      bot.sendMessage(chatId, 'Unknown command');
+  }
+});
+
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const userId = msg.from?.id || 0;
+  const username = msg.from?.username || '';
+  const text = msg.text?.trim() || '';
+
+  if (userStates[userId] && userStates[userId].step === 'awaiting_match_details') {
+     // Clear the state
+    const result = await handleMatchResultInput(chatId, username, text);
+    if (result) {
+      delete userStates[userId]; 
+    }
+  }
 });
 
 export default bot;

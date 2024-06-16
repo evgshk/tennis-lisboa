@@ -24,7 +24,6 @@ export function createMatchReportMessage (winner: Player, loser: Player, scores:
     
     🔢 Stats & Facts
     
-    - *${winner.name}* had a *${(elo.winnerExpected * 100).toFixed(2)}%* chance of winning (according to Elo).
     - *${winner.name}* gained *${elo.winnerGained.toFixed(2)}* points and now has a rating of *${winner.rating.toFixed(2)}*.
     - *${loser.name}* lost *${-elo.loserLost.toFixed(2)}* points and now has a rating of *${loser.rating.toFixed(2)}*.
 
@@ -53,7 +52,7 @@ export function createPlayersRankingMessage(players: Player[]) {
     .join('\n');
 
   const message = multilineMessage(`
-    🎾 *Player Elo Ranking*
+    🎾 <b>Player Elo Ratings</b>
     
     ${ratingMessageBlock}
   `);
