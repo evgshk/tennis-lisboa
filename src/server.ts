@@ -15,5 +15,5 @@ app.post(`/bot${token}`, (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  bot.setWebHook(`https://tennis-lisboa.azurewebsites.net:${PORT}/bot${token}`);
+  bot.setWebHook(`https://tennis-lisboa-000a7355ff89.herokuapp.com/bot${token}`);
 });
