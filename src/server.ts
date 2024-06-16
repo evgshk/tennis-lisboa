@@ -8,6 +8,7 @@ const app = express();
 app.use(express.json());
 
 app.post(`/bot${token}`, (req, res) => {
+  console.log(req);
   bot.processUpdate(req.body);
   res.sendStatus(200);
 });
