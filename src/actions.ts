@@ -1,5 +1,5 @@
 import TelegramBot from 'node-telegram-bot-api';
-import { addPlayer, getPlayer, getPlayerRatings } from './persistance/firebase';
+import { addPlayer, getPlayer, getPlayerByUsername, getPlayerRatings } from './persistance/firebase';
 import { createMyStatsMessage, createPlayersRankingMessage } from './common/message-builder';
 import { createDefaultPlayer } from './common/models';
 
@@ -31,6 +31,22 @@ export async function sendMyStats(bot: TelegramBot, chatId: number, telegramId: 
 
   if (!player) {
     bot.sendMessage(chatId, "You are not registered as a player. Please use the /register command to register.");
+    return;
+  }
+
+  bot.sendMessage(chatId, createMyStatsMessage(player), { parse_mode: 'Markdown' });
+}
+
+export async function sendOtherPlayerStats(bot: TelegramBot, chatId: number, username: string) {
+  if (!username) {
+    bot.sendMessage(chatId, "Error: no username is specified.");
+    return;
+  }
+
+  const player = await getPlayerByUsername(username);
+
+  if (!player) {
+    bot.sendMessage(chatId, "Player is not registered.");
     return;
   }
 

@@ -1,17 +1,19 @@
 import { Player } from './models';
 
-interface MatchResut {
+export interface MatchResult {
   winner: Player;
+  winnerSetsWon: number;
   loser: Player;
+  loserSetsWon: number;
   sets: number[][];
 }
 
-export function parseScore(player: Player, opponent: Player, score: string): MatchResut {
+export function calculateMatchResult(player: Player, opponent: Player, score: string): MatchResult {
   const sets = score.split(' ').map(set => set.split('-').map(Number));
 
   if (sets.some(([score1, score2]) => isNaN(score1) || isNaN(score2))) {
     console.log('Invalid score format. Please use integers for scores.');
-    return {} as MatchResut;
+    return {} as MatchResult;
   }
 
   const playerSetsWon = sets.reduce((acc, [score1, score2]) => acc + (score1 > score2 ? 1 : 0), 0);
@@ -27,5 +29,5 @@ export function parseScore(player: Player, opponent: Player, score: string): Mat
     loser = player;
   }
 
-  return { winner, loser, sets } as MatchResut
+  return { winner, winnerSetsWon: playerSetsWon, loser, loserSetsWon: opponentSetsWon, sets } as MatchResult
 }

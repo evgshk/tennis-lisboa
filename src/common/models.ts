@@ -1,6 +1,7 @@
 export interface Player {
   name: string,
   rating: number,
+  matches: MatchStats[],
   telegramId: number,
   telegramUsername: string | undefined,
   joinedAt: any,
@@ -8,14 +9,24 @@ export interface Player {
   losses: number,
   matchesPlayed: number,
   highestRating: number,
-  lastMatchDate: any,
-  matches?: any;
+  lastMatchDate: any
+}
+
+export interface MatchStats {
+  timestamp: Date,
+  ratingChange: number,
+  score: string,
+  win: boolean,
+  setsWon: number,
+  setsLost: number,
+  opponent: Player
 }
 
 export function createDefaultPlayer(name: string, telegramId: number, telegramUsername: string | undefined): Player {
   const player: Player = {
     name: name,
     rating: 1200,
+    matches: [],
     telegramId: telegramId,
     telegramUsername: telegramUsername,
     joinedAt: new Date(),

@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import { EloCalculationResult } from '../elo';
-import { Player } from '../common/models';
+import { MatchStats, Player } from '../common/models';
+import { MatchResult } from '../common/helpers';
 
 const firebaseConfigBase64 = process.env.FIREBASE_CONFIG;
 
@@ -63,43 +64,32 @@ export async function getPlayerRatings(): Promise<Player[]> {
   return playerRatings;  
 }
 
-export async function updateRatings(winner: Player, loser: Player, elo: EloCalculationResult, matchRef: FirebaseFirestore.DocumentReference): Promise<Player[]> {
-  winner.rating = winner.rating + elo.winnerGained;
-  loser.rating = loser.rating + elo.loserLost;
-
-  const now = new Date();
-
-  await db.collection('players').doc(winner.telegramId.toString()).update({
-    rating: winner.rating,
-    highestRating: winner.rating > winner.highestRating ? winner.rating : winner.highestRating,
-    matchesPlayed: ++winner.matchesPlayed,
-    wins: ++winner.wins,
-    lastMatchDate: now,
-    matches: admin.firestore.FieldValue.arrayUnion(matchRef),
-  });
-
-  await db.collection('players').doc(loser.telegramId.toString()).update({
-    rating: loser.rating,
-    highestRating: loser.rating > loser.highestRating ? loser.rating : loser.highestRating,
-    matchesPlayed: ++loser.matchesPlayed,
-    losses: ++loser.losses,
-    lastMatchDate: now,
-    matches: admin.firestore.FieldValue.arrayUnion(matchRef),
-  });
-
-  return [winner, loser];
+export async function updatePlayerProfiles(match: MatchResult, elo: EloCalculationResult): Promise<void> {
+  await updatePlayer(match.winner, true, match.loser, match.sets, match.winnerSetsWon, match.loserSetsWon, elo.winnerGained);
+  await updatePlayer(match.loser, false, match.winner, match.sets, match.loserSetsWon, match.winnerSetsWon, elo.loserLost);
 }
 
-export async function saveMatch(winner: Player, loser: Player, sets: number[][]): Promise<FirebaseFirestore.DocumentReference>  {
+async function updatePlayer(player: Player, isPlayerWinner: boolean, opponent: Player, sets: number[][], setsWon: number, setsLost: number, ratingChange: number): Promise<void> {
   const now = new Date();
 
-  const matchRef = await db.collection('matches').add({
-    winner: winner.telegramUsername,
-    loser: loser.telegramUsername,
-    scores: sets.map(set => set.join('-')).join(' '),
-    timestamp: now,
+  await db.collection('players').doc(player.telegramId.toString()).update({
+    rating: player.rating + ratingChange,
+    matches: admin.firestore.FieldValue.arrayUnion({
+      timestamp: now,
+      ratingChange: ratingChange,
+      win: isPlayerWinner,
+      score: sets.map(set => set.join('-')).join(' '),
+      setsWon,
+      setsLost,
+      opponent: {
+        name: opponent.name,
+        telegramId: opponent.telegramId
+      } as Player
+    } as MatchStats),
+    highestRating: player.rating > player.highestRating ? player.rating : player.highestRating,
+    matchesPlayed: ++player.matchesPlayed,
+    wins: isPlayerWinner ? ++player.wins : player.wins,
+    losses: !isPlayerWinner ? ++player.losses : player.losses,
+    lastMatchDate: now,
   });
-
-  return matchRef;  
 }
-
