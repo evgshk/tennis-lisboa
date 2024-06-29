@@ -59,7 +59,9 @@ bot.onText(/\/matchresult(.*)/, (msg, match) => {
   const username = msg.from?.username || '';
   const input = match[1].trim();
 
-  if (!input) {
+  // console.log(input);
+
+  if (!input || input === '@tennis_lisboa_bot') {
     userStates[userId] = { step: 'awaiting_match_details' };
     bot.sendMessage(chatId, createMatchReportInfoMessage());
   } else {
@@ -77,9 +79,6 @@ const handleMatchResultInput = async (chatId: number, username: string, input: s
 
   let selfMatch = input.match(selfMatchRegex);
   let match = input.match(otherMatchRegex);
-
-  console.log("self match: ", selfMatch);
-  console.log("match: ", match);
 
   if (match) {
     [, playerUsername, opponentUsername, score] = match;
@@ -130,7 +129,7 @@ bot.on('callback_query', async (query) => {
       if (query.from) {
         const telegramId = query.from.id as number;
         const telegramUsername = query.from.username || '';
-        const name = `${query.from?.first_name} ${query.from?.last_name}`;
+        const name = `${query.from?.first_name ?? ''} ${query.from?.last_name ?? ''}`;
 
         await registerMe(bot, chatId, name, telegramId, telegramUsername);
       }
