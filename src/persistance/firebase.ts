@@ -71,9 +71,10 @@ export async function updatePlayerProfiles(match: MatchResult, elo: EloCalculati
 
 async function updatePlayer(player: Player, isPlayerWinner: boolean, opponent: Player, sets: number[][], setsWon: number, setsLost: number, ratingChange: number, winProbability: number): Promise<void> {
   const now = new Date();
+  const newRating = player.rating + ratingChange;
 
   await db.collection('players').doc(player.telegramId.toString()).update({
-    rating: player.rating + ratingChange,
+    rating: newRating,
     matches: admin.firestore.FieldValue.arrayUnion({
       timestamp: now,
       ratingChange: ratingChange,
@@ -87,7 +88,7 @@ async function updatePlayer(player: Player, isPlayerWinner: boolean, opponent: P
         telegramId: opponent.telegramId
       } as Player
     } as MatchStats),
-    highestRating: player.rating > player.highestRating ? player.rating : player.highestRating,
+    highestRating: newRating > player.highestRating ? newRating : player.highestRating,
     matchesPlayed: ++player.matchesPlayed,
     wins: isPlayerWinner ? ++player.wins : player.wins,
     losses: !isPlayerWinner ? ++player.losses : player.losses,
