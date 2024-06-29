@@ -24,14 +24,11 @@ export function createMyStatsMessage (player: Player): string {
 
 export function createMatchReportMessage (winner: Player, loser: Player, scores: string, elo: EloCalculationResult): string {
   const message = multilineMessage(`
-    🏆 *${winner.name}* defeated *${loser.name}* with a score of *${scores}*.
+    🏆 *${winner.name}* def. *${loser.name}* *${scores}*.
     
-    🔢 Stats & Facts
+    🔢 *${winner.name}* ${(winner.rating+elo.winnerGained).toFixed(2)} *(+${elo.winnerGained.toFixed(2)})* pts, *${loser.name}* ${(loser.rating+elo.loserLost).toFixed(2)} *(${elo.loserLost.toFixed(2)})* pts.
     
-    - *${winner.name}* gained *${elo.winnerGained.toFixed(2)}* points and now has a rating of *${winner.rating.toFixed(2)}*.
-    - *${loser.name}* lost *${-elo.loserLost.toFixed(2)}* points and now has a rating of *${loser.rating.toFixed(2)}*.
-
-    ✅ Match result successfully recorded.
+    ✅ Result recorded.
   `);
 
   return message;

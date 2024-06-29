@@ -15,6 +15,7 @@ export interface Player {
 export interface MatchStats {
   timestamp: Date,
   ratingChange: number,
+  winProbability: number,
   score: string,
   win: boolean,
   setsWon: number,

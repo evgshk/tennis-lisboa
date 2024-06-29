@@ -65,11 +65,11 @@ export async function getPlayerRatings(): Promise<Player[]> {
 }
 
 export async function updatePlayerProfiles(match: MatchResult, elo: EloCalculationResult): Promise<void> {
-  await updatePlayer(match.winner, true, match.loser, match.sets, match.winnerSetsWon, match.loserSetsWon, elo.winnerGained);
-  await updatePlayer(match.loser, false, match.winner, match.sets, match.loserSetsWon, match.winnerSetsWon, elo.loserLost);
+  await updatePlayer(match.winner, true, match.loser, match.sets, match.winnerSetsWon, match.loserSetsWon, elo.winnerGained, elo.winnerExpected);
+  await updatePlayer(match.loser, false, match.winner, match.sets, match.loserSetsWon, match.winnerSetsWon, elo.loserLost, elo.loserExpected);
 }
 
-async function updatePlayer(player: Player, isPlayerWinner: boolean, opponent: Player, sets: number[][], setsWon: number, setsLost: number, ratingChange: number): Promise<void> {
+async function updatePlayer(player: Player, isPlayerWinner: boolean, opponent: Player, sets: number[][], setsWon: number, setsLost: number, ratingChange: number, winProbability: number): Promise<void> {
   const now = new Date();
 
   await db.collection('players').doc(player.telegramId.toString()).update({
@@ -77,6 +77,7 @@ async function updatePlayer(player: Player, isPlayerWinner: boolean, opponent: P
     matches: admin.firestore.FieldValue.arrayUnion({
       timestamp: now,
       ratingChange: ratingChange,
+      winProbability, 
       win: isPlayerWinner,
       score: sets.map(set => set.join('-')).join(' '),
       setsWon,
