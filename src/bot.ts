@@ -14,6 +14,8 @@ const bot = new TelegramBot(telegramBotToken, { polling: true });
 const userStates: { [key: number]: { step: string } } = {};
 
 bot.onText(/\/start/, async (msg) => {
+  console.log('/start by', msg.from?.username);
+
   const chatId = msg.chat.id;
   const messageThreadId = msg.message_thread_id ?? 0;
 
@@ -29,6 +31,8 @@ bot.onText(/\/start/, async (msg) => {
 });
 
 bot.onText(/\/mystats(@\w+)?/, async (msg, match) => {
+  console.log('/mystats by', msg.from?.username, match);
+
   const chatId = msg.chat.id;
   const userId = msg.from?.id || 0;
   const messageThreadId = msg.message_thread_id ?? 0;
@@ -45,6 +49,8 @@ bot.onText(/\/mystats(@\w+)?/, async (msg, match) => {
 });
 
 bot.onText(/\/ratings/, async (msg) => {
+  console.log('/ratings by', msg.from?.username);
+
   const chatId = msg.chat.id;
   const messageThreadId = msg.message_thread_id ?? 0;
 
@@ -52,6 +58,8 @@ bot.onText(/\/ratings/, async (msg) => {
 });
 
 bot.onText(/\/matchresult(.*)/, (msg, match) => {
+  console.log('/matchresult by', msg.from?.username, match);
+
   const chatId = msg.chat.id;
   const messageThreadId = msg.message_thread_id ?? 0;
 
@@ -75,6 +83,8 @@ bot.onText(/\/matchresult(.*)/, (msg, match) => {
 });
 
 const handleMatchResultInput = async (chatId: number, messageThreadId: number, username: string, input: string): Promise<boolean> => {
+  console.log('handle /matchresult by', username, input);
+
   const selfMatchRegex = /@(\w+)\s(\d+-\d+(\s\d+-\d+){0,2})/;
   const otherMatchRegex = /@(\w+)\s-\s@(\w+)\s(\d+-\d+(\s\d+-\d+){0,2})/;
 
@@ -132,6 +142,8 @@ bot.on('callback_query', async (query) => {
   switch (query.data) {
     case 'register_me':
       if (query.from) {
+        console.log('callback [register_me] by', query.from.username);
+
         const telegramId = query.from.id as number;
         const telegramUsername = query.from.username || '';
         const name = `${query.from?.first_name ?? ''} ${query.from?.last_name ?? ''}`;
@@ -140,13 +152,17 @@ bot.on('callback_query', async (query) => {
       }
       break;
     case 'view_ratings':
+      console.log('callback [view_ratings] by', query.from.username);
       await sendPlayerRatings(bot, chatId, messageThreadId);
       break;
     case 'report_match':
+      console.log('callback [report_match] by', query.from.username);
+      userStates[query.from.id] = { step: 'awaiting_match_details' };
       bot.sendMessage(chatId, createMatchReportInfoMessage(), {parse_mode: 'Markdown', message_thread_id: messageThreadId });
       break;
     case 'my_stats':
       if (query.from) {
+        console.log('callback [my_stats] by', query.from.username);
         const telegramId = query.from.id as number;
         await sendMyStats(bot, chatId, messageThreadId, telegramId);
       }
