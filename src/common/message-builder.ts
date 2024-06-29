@@ -8,15 +8,15 @@ export function createMyStatsMessage (player: Player): string {
   const message = multilineMessage(`
     👤 *${player.name}*
 
-    Current Rating: *${player.rating.toFixed(2)}*
-    Last 5 games: *${last5MatchesResults ? last5MatchesResults : 'n/a'}*
-    Rating change (last 5 games): *${ratingChangeLast5Matches >= 0 ? '+' : ''} ${ratingChangeLast5Matches.toFixed(2)}*
+    Rating: *${player.rating.toFixed(2)}*
+    Last 5: *${last5MatchesResults ? last5MatchesResults : 'n/a'}*
+    Change (last 5): *${ratingChangeLast5Matches >= 0 ? '+' : ''} ${ratingChangeLast5Matches.toFixed(2)}*
     
-    Highest Rating: *${player.highestRating.toFixed(2)}*
-    Wins/Losses: *${player.wins}/${player.losses}*
+    High: *${player.highestRating.toFixed(2)}*
+    W/L: *${player.wins}/${player.losses}*
 
-    _Join Date: ${player.joinedAt.toDate().toLocaleDateString()}_
-    _Last Match Date: ${player.lastMatchDate.toDate().toLocaleDateString()}_
+    _Joined: ${player.joinedAt.toDate().toLocaleDateString()}_
+    _Last Match: ${player.lastMatchDate.toDate().toLocaleDateString()}_
   `);
 
   return message;
@@ -36,11 +36,11 @@ export function createMatchReportMessage (winner: Player, loser: Player, scores:
 
 export function createMatchReportInfoMessage(): string {
   const message = multilineMessage(`
-    🔹 To report your match results, use the format:
-    @opponent 6-2 6-2 10-8. 
+    🔹 To report your match: 
+    @opponent 6-2 6-2 10-8 
 
-    🔹 If you are reporting a match between two other players, use the format:
-    @player - @opponent 6-2 6-2 10-8.`
+    🔹 To report others: 
+    @player - @opponent 6-2 6-2 10-8`
   );
 
   return message;
