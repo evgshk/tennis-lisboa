@@ -16,7 +16,7 @@ export function createMyStatsMessage (player: Player): string {
     W/L: *${player.wins}/${player.losses}*
 
     _Joined: ${player.joinedAt.toDate().toLocaleDateString()}_
-    _Last Match: ${player.lastMatchDate.toDate().toLocaleDateString()}_
+    _Last Update: ${player.lastMatchDate.toDate().toLocaleDateString()}_
   `);
 
   return message;

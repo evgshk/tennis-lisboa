@@ -9,7 +9,8 @@ export interface Player {
   losses: number,
   matchesPlayed: number,
   highestRating: number,
-  lastMatchDate: any
+  lastMatchDate: any,
+  isActive: boolean
 }
 
 export interface MatchStats {
@@ -35,7 +36,8 @@ export function createDefaultPlayer(name: string, telegramId: number, telegramUs
     losses: 0,
     matchesPlayed: 0,
     highestRating: 1200,
-    lastMatchDate: new Date(0)
+    lastMatchDate: new Date(0),
+    isActive: true
   }
 
   return player;

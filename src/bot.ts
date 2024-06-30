@@ -63,6 +63,11 @@ bot.onText(/\/matchresult(.*)/, (msg, match) => {
   const chatId = msg.chat.id;
   const messageThreadId = msg.message_thread_id ?? 0;
 
+  if (msg.chat.type === 'private') {
+    bot.sendMessage(chatId, 'This command can only be used in group chats.');
+    return;
+  }
+
   if (!match) {
     bot.sendMessage(chatId, createMatchReportInfoMessage(), { parse_mode: 'Markdown', message_thread_id: messageThreadId });
     return;
