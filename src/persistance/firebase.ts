@@ -50,7 +50,7 @@ export async function getPlayerByUsername(username: string): Promise<Player | un
 }
 
 export async function getPlayerRatings(): Promise<Player[]> {
-  const playerRatings = (await db.collection('players').where('isActive', '==', 'true').orderBy('rating', 'desc').get()).docs.map(doc => {
+  const playerRatings = (await db.collection('players').where('isActive', '==', true).orderBy('rating', 'desc').get()).docs.map(doc => {
     const data = doc.data();
 
     return {
