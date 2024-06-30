@@ -31,7 +31,7 @@ bot.onText(/\/start/, async (msg) => {
 });
 
 bot.onText(/\/mystats(@\w+)?/, async (msg, match) => {
-  console.log('/mystats by', msg.from?.username, match);
+  console.log('/mystats by', msg.from?.username, match?.toString());
 
   const chatId = msg.chat.id;
   const userId = msg.from?.id || 0;
@@ -58,7 +58,7 @@ bot.onText(/\/ratings/, async (msg) => {
 });
 
 bot.onText(/\/matchresult(.*)/, (msg, match) => {
-  console.log('/matchresult by', msg.from?.username, match);
+  console.log('/matchresult by', msg.from?.username, match?.toString());
 
   const chatId = msg.chat.id;
   const messageThreadId = msg.message_thread_id ?? 0;
@@ -88,7 +88,7 @@ bot.onText(/\/matchresult(.*)/, (msg, match) => {
 });
 
 const handleMatchResultInput = async (chatId: number, messageThreadId: number, username: string, input: string): Promise<boolean> => {
-  console.log('handle /matchresult by', username, input);
+  console.log('handle /matchresult by', username, input.toString());
 
   const selfMatchRegex = /@(\w+)\s(\d+-\d+(\s\d+-\d+){0,2})/;
   const otherMatchRegex = /@(\w+)\s-\s@(\w+)\s(\d+-\d+(\s\d+-\d+){0,2})/;
