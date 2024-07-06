@@ -57,7 +57,8 @@ export async function getPlayerRatings(): Promise<Player[]> {
       name: data.name,
       rating: data.rating,
       telegramId: data.telegramId,
-      telegramUsername: data.telegramUsername
+      telegramUsername: data.telegramUsername,
+      matches: data.matches
     } as Player;
   });
 

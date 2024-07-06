@@ -1,8 +1,7 @@
 import { EloCalculationResult } from '../elo';
-import { Player } from './models';
+import { MatchStats, Player } from './models';
 
 export function createMyStatsMessage (player: Player): string {
-  const ratingChangeLast5Matches = player.matches?.map(x => x.ratingChange).slice(-5).reduce((acc, val) => acc + val, 0) ?? 0;
   const last5MatchesResults = player.matches?.map(x => x.win).slice(-5).map(x => x ? '🟢' : '🔴').join('') ?? '';
 
   const message = multilineMessage(`
@@ -10,7 +9,7 @@ export function createMyStatsMessage (player: Player): string {
 
     Rating: *${player.rating.toFixed(2)}*
     Last 5: *${last5MatchesResults ? last5MatchesResults : 'n/a'}*
-    Change (last 5): *${ratingChangeLast5Matches >= 0 ? '+' : ''} ${ratingChangeLast5Matches.toFixed(2)}*
+    Change (last 5): *${calculateRatingChangeLastMatches(player.matches, 5)}*
     
     High: *${player.highestRating.toFixed(2)}*
     W/L: *${player.wins}/${player.losses}*
@@ -49,18 +48,52 @@ export function createMatchReportInfoMessage(): string {
 export function createPlayersRankingMessage(players: Player[]) {
   const ratingMessageBlock = players
     // .map((player, index) => `${index+1}. ${player.name} (@${player.telegramUsername}) [<a href="tg://user?id=${player.telegramId}">dfd</a>] - ${player.rating.toFixed(2)}`)
-    .map((player, index) => `${index+1}. ${player.name} - <b>${player.rating.toFixed(2)}</b>`)
+    .map((player, index) => {
+      let wins = 0;
+      let losses = 0;
+      player.matches.forEach(match => {match.win ? wins++ : losses++ });
+      return multilineMessage(`${index+1}. ${player.name} - *${player.rating.toFixed(2)}* (${wins}/${losses}, ${calculateRatingChangeLastMatches(player.matches, 5)})`);
+    })
     .join('\n');
 
   const message = multilineMessage(`
-    🎾 <b>Player Elo Ratings</b>
+    🎾 *Player Ratings*
     
-    ${ratingMessageBlock}
+    ${alignRatings(ratingMessageBlock)}
   `);
 
   return message;
 }
 
+function alignRatings(input: string) {
+  // Split the input string into individual lines
+  const lines = input.trim().split('\n');
+
+  // Extract names and find the maximum length
+  const names = lines.map(line => {
+      const match = line.match(/^\d+\.\s+([^\-]+)\s+-/);
+      return match ? match[1].trim() : '';
+  });
+
+  const maxLength = Math.max(...names.map(name => name.length));
+
+  // Pad each name with spaces to align the ratings
+  const alignedLines = lines.map(line => {
+      return line.replace(/^(\d+\.\s+)([^\-]+)(\s+-)/, (match, p1, p2, p3) => {
+          const paddedName = p2.trim().padEnd(maxLength);
+          return `${p1}${paddedName}${p3}`;
+      });
+  });
+
+  // Join the lines back into a single string
+  return alignedLines.join('\n');
+};
+
 function multilineMessage(message: string): string {
   return message.split('\n').map(line => line.trim()).join('\n');
+}
+
+function calculateRatingChangeLastMatches(matches: MatchStats[], numberOfLastMatches: number) {
+  var ratingChange = matches?.map(x => x.ratingChange).slice(-numberOfLastMatches).reduce((acc, val) => acc + val, 0) ?? 0;
+  return ratingChange >= 0 ? `+${ratingChange.toFixed(2)}` : ratingChange.toFixed(2);
 }

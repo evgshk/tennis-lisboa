@@ -56,5 +56,5 @@ export async function sendOtherPlayerStats(bot: TelegramBot, chatId: number, mes
 export async function sendPlayerRatings(bot: TelegramBot, chatId: number, messageThreadId: number) {
   const playerRatings = await getPlayerRatings();
 
-  bot.sendMessage(chatId, createPlayersRankingMessage(playerRatings), { parse_mode: 'HTML', message_thread_id: messageThreadId });
+  bot.sendMessage(chatId, createPlayersRankingMessage(playerRatings), { parse_mode: 'Markdown', message_thread_id: messageThreadId });
 } 
