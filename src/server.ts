@@ -16,7 +16,6 @@ app.post(`/bot${token}`, (req, res) => {
 });
 
 app.listen(port, () => {
-  const url = `https://${projectUrl}/bot${token}`;
-  bot.setWebHook(url);
   console.log(`Server is running on port ${port}`);
+  bot.setWebHook(`https://${projectUrl}/bot${token}`);
 });

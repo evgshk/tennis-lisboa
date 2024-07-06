@@ -9,7 +9,7 @@ export function createMyStatsMessage (player: Player): string {
 
     Rating: *${player.rating.toFixed(2)}*
     Last 5: *${last5MatchesResults ? last5MatchesResults : 'n/a'}*
-    Change (last 5): *${calculateRatingChangeLastMatches(player.matches, 5)}*
+    Change (last 5): *${calculateRatingChange(player.matches, 5)}*
     
     High: *${player.highestRating.toFixed(2)}*
     W/L: *${player.wins}/${player.losses}*
@@ -47,53 +47,31 @@ export function createMatchReportInfoMessage(): string {
 
 export function createPlayersRankingMessage(players: Player[]) {
   const ratingMessageBlock = players
-    // .map((player, index) => `${index+1}. ${player.name} (@${player.telegramUsername}) [<a href="tg://user?id=${player.telegramId}">dfd</a>] - ${player.rating.toFixed(2)}`)
     .map((player, index) => {
-      let wins = 0;
-      let losses = 0;
-      player.matches.forEach(match => {match.win ? wins++ : losses++ });
-      return multilineMessage(`${index+1}. ${player.name} - *${player.rating.toFixed(2)}* (${wins}/${losses}, ${calculateRatingChangeLastMatches(player.matches, 5)})`);
+      const ratingChange = calculateRatingChange(player.matches, 5);
+      
+      return multilineMessage(
+        `${index + 1}. ${player.name} - *${player.rating.toFixed(2)}* (${ratingChange})`
+      );
     })
     .join('\n');
 
   const message = multilineMessage(`
     🎾 *Player Ratings*
     
-    ${alignRatings(ratingMessageBlock)}
+    ${ratingMessageBlock}
+
+    _Values in parentheses show the rating change over the last 5 matches._
   `);
 
   return message;
 }
 
-function alignRatings(input: string) {
-  // Split the input string into individual lines
-  const lines = input.trim().split('\n');
-
-  // Extract names and find the maximum length
-  const names = lines.map(line => {
-      const match = line.match(/^\d+\.\s+([^\-]+)\s+-/);
-      return match ? match[1].trim() : '';
-  });
-
-  const maxLength = Math.max(...names.map(name => name.length));
-
-  // Pad each name with spaces to align the ratings
-  const alignedLines = lines.map(line => {
-      return line.replace(/^(\d+\.\s+)([^\-]+)(\s+-)/, (match, p1, p2, p3) => {
-          const paddedName = p2.trim().padEnd(maxLength);
-          return `${p1}${paddedName}${p3}`;
-      });
-  });
-
-  // Join the lines back into a single string
-  return alignedLines.join('\n');
-};
-
 function multilineMessage(message: string): string {
   return message.split('\n').map(line => line.trim()).join('\n');
 }
 
-function calculateRatingChangeLastMatches(matches: MatchStats[], numberOfLastMatches: number) {
+function calculateRatingChange(matches: MatchStats[], numberOfLastMatches: number) {
   var ratingChange = matches?.map(x => x.ratingChange).slice(-numberOfLastMatches).reduce((acc, val) => acc + val, 0) ?? 0;
   return ratingChange >= 0 ? `+${ratingChange.toFixed(2)}` : ratingChange.toFixed(2);
 }
