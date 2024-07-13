@@ -1,8 +1,8 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { registerMe, sendMyStats, sendOtherPlayerStats, sendPlayerRatings } from './actions';
 import { calculateEloRating } from './elo';
-import { getPlayerByUsername, updatePlayerProfiles } from './persistance/firebase';
-import { createMatchReportInfoMessage, createMatchReportMessage } from './common/message-builder';
+import { getPlayer, getPlayerByUsername, updatePlayerProfiles } from './persistance/firebase';
+import { createAlreadyRegisteredMessage, createIntroMessage, createIntroRegisteredMessage, createMatchReportInfoMessage, createMatchReportMessage, createRegisteredMessage } from './common/message-builder';
 import { calculateMatchResult } from './common/helpers';
 
 const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -19,19 +19,38 @@ bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const messageThreadId = msg.message_thread_id ?? 0;
 
-  bot.sendMessage(chatId, "Welcome to the Tennis Elo Rating Bot! Use the menu below to navigate.", {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "Register Me", callback_data: 'register_me' }, { text: "View Ratings", callback_data: 'view_ratings' }],
-        [{ text: "Report Match Result", callback_data: 'report_match' }, { text: "My Stats", callback_data: 'my_stats' }]
-      ]
-    },
-    message_thread_id: messageThreadId
-  });
+  const player = await getPlayer(msg.from?.id ?? 0);
+
+  if (!player) {
+    bot.sendMessage(chatId, createIntroMessage(), { message_thread_id: messageThreadId });
+  } else {
+    bot.sendMessage(chatId, createIntroRegisteredMessage(player.name), { message_thread_id: messageThreadId });
+  }
+
 });
 
-bot.onText(/\/mystats(@\w+)?/, async (msg, match) => {
-  console.log('/mystats by', msg.from?.username, match?.toString());
+bot.onText(/\/register/, async (msg) => {
+  const username = msg.from?.username;
+  console.log('/register by', username);
+
+  const telegramId = msg.from?.id ?? 0;
+  const chatId = msg.chat.id;
+  const messageThreadId = msg.message_thread_id ?? 0;
+  const name = `${msg.from?.first_name ?? ''} ${msg.from?.last_name ?? ''}`;
+
+  const player = await getPlayer(telegramId);
+
+  if (!player) {
+    await registerMe(bot, chatId, messageThreadId, name, telegramId, username || '');
+    bot.sendMessage(chatId, createRegisteredMessage(name), { message_thread_id: messageThreadId });
+  } else {
+    bot.sendMessage(chatId, createAlreadyRegisteredMessage(name), { message_thread_id: messageThreadId });
+  }
+
+});
+
+bot.onText(/\/profile(@\w+)?/, async (msg, match) => {
+  console.log('/profile by', msg.from?.username, match?.toString());
 
   const chatId = msg.chat.id;
   const userId = msg.from?.id || 0;
@@ -48,8 +67,8 @@ bot.onText(/\/mystats(@\w+)?/, async (msg, match) => {
 
 });
 
-bot.onText(/\/ratings/, async (msg) => {
-  console.log('/ratings by', msg.from?.username);
+bot.onText(/\/rankings/, async (msg) => {
+  console.log('/rankings by', msg.from?.username);
 
   const chatId = msg.chat.id;
   const messageThreadId = msg.message_thread_id ?? 0;
@@ -139,43 +158,6 @@ const handleMatchResultInput = async (chatId: number, messageThreadId: number, u
 
   return true;
 }
-
-bot.on('callback_query', async (query) => {
-  const chatId = query.message?.chat.id as number;
-  const messageThreadId = query.message?.message_thread_id ?? 0;
-
-  switch (query.data) {
-    case 'register_me':
-      if (query.from) {
-        console.log('callback [register_me] by', query.from.username);
-
-        const telegramId = query.from.id as number;
-        const telegramUsername = query.from.username || '';
-        const name = `${query.from?.first_name ?? ''} ${query.from?.last_name ?? ''}`;
-
-        await registerMe(bot, chatId, messageThreadId, name, telegramId, telegramUsername);
-      }
-      break;
-    case 'view_ratings':
-      console.log('callback [view_ratings] by', query.from.username);
-      await sendPlayerRatings(bot, chatId, messageThreadId);
-      break;
-    case 'report_match':
-      console.log('callback [report_match] by', query.from.username);
-      userStates[query.from.id] = { step: 'awaiting_match_details' };
-      bot.sendMessage(chatId, createMatchReportInfoMessage(), {parse_mode: 'Markdown', message_thread_id: messageThreadId });
-      break;
-    case 'my_stats':
-      if (query.from) {
-        console.log('callback [my_stats] by', query.from.username);
-        const telegramId = query.from.id as number;
-        await sendMyStats(bot, chatId, messageThreadId, telegramId);
-      }
-      break;
-    default:
-      bot.sendMessage(chatId, 'Unknown command', { message_thread_id: messageThreadId });
-  }
-});
 
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;

@@ -1,6 +1,57 @@
 import { EloCalculationResult } from '../elo';
 import { MatchStats, Player } from './models';
 
+const cheatsheet = `Here’s a quick cheatsheet to get you started:
+    
+  /profile – Get your profile stats
+  /rankings – See player's rankings
+  /matchresult – Report a score`;
+
+
+export function createIntroMessage (): string {
+  const message = multilineMessage(
+    `Welcome to 🤖 Tennis Lisboa Bot, your go-to tool for managing and analyzing ELO ratings with ease. Bot helps you with:
+
+    🎯 Calculate ELO ratings
+    📊 Analyze activity
+    📅 Track progress over time
+
+    Type /register to start use it. Let’s make your game stats shine! 🌟`
+  )
+
+  return message;
+}
+
+export function createIntroRegisteredMessage (name: string): string {
+  const message = multilineMessage(
+    `Hi, ${name}
+
+    ${cheatsheet}`
+  )
+
+  return message;
+}
+
+export function createRegisteredMessage (name: string): string {
+  const message = multilineMessage(
+    `${name}, welcome aboard! 🎉
+
+    You've successfully registered. ${cheatsheet}`
+  )
+
+  return message;
+}
+
+export function createAlreadyRegisteredMessage (name: string): string {
+  const message = multilineMessage(
+    `Hi, ${name}
+
+    You're already registered. ${cheatsheet}`
+  )
+
+  return message;
+}
+
 export function createMyStatsMessage (player: Player): string {
   const last5MatchesResults = player.matches?.map(x => x.win).slice(-5).map(x => x ? '🟢' : '🔴').join('') ?? '';
 
