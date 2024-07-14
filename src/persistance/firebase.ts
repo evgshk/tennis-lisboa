@@ -65,6 +65,24 @@ export async function getPlayerRatings(): Promise<Player[]> {
   return playerRatings;  
 }
 
+export async function getCurrentTournament(): Promise<string> {
+  const now = new Date();
+  const tournamentRaw = db.collection('tournaments').where('from', '<=', now).where('to', '>=', now);
+  const snapshot = await tournamentRaw.get();
+
+  if (snapshot.empty) {
+    return 'N/A';
+  }
+
+  const tournament = snapshot.docs[0].data();
+  
+  if (!tournament || !tournament.name) {
+    return 'N/A';
+  }
+
+  return tournament.name;
+}
+
 export async function updatePlayerProfiles(match: MatchResult, elo: EloCalculationResult): Promise<void> {
   await updatePlayer(match.winner, true, match.loser, match.sets, match.winnerSetsWon, match.loserSetsWon, elo.winnerGained, elo.winnerExpected);
   await updatePlayer(match.loser, false, match.winner, match.sets, match.loserSetsWon, match.winnerSetsWon, elo.loserLost, elo.loserExpected);
@@ -73,6 +91,7 @@ export async function updatePlayerProfiles(match: MatchResult, elo: EloCalculati
 async function updatePlayer(player: Player, isPlayerWinner: boolean, opponent: Player, sets: number[][], setsWon: number, setsLost: number, ratingChange: number, winProbability: number): Promise<void> {
   const now = new Date();
   const newRating = player.rating + ratingChange;
+  const tournament = await getCurrentTournament();
 
   await db.collection('players').doc(player.telegramId.toString()).update({
     rating: newRating,
@@ -87,7 +106,8 @@ async function updatePlayer(player: Player, isPlayerWinner: boolean, opponent: P
       opponent: {
         name: opponent.name,
         telegramId: opponent.telegramId
-      } as Player
+      } as Player,
+      tournament 
     } as MatchStats),
     highestRating: newRating > player.highestRating ? newRating : player.highestRating,
     matchesPlayed: ++player.matchesPlayed,

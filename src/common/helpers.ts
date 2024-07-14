@@ -1,4 +1,4 @@
-import { Player } from './models';
+import { MatchStats, Player } from './models';
 
 export interface MatchResult {
   winner: Player;
@@ -30,4 +30,27 @@ export function calculateMatchResult(player: Player, opponent: Player, score: st
   }
 
   return { winner, winnerSetsWon: playerSetsWon, loser, loserSetsWon: opponentSetsWon, sets } as MatchResult
+}
+
+// Group matches by year and tournament
+export function groupMatchesByYearAndTournament(matches: MatchStats[]): { [year: string]: { [tournament: string]: MatchStats[] } } {
+  const groupedMatches: { [year: string]: { [tournament: string]: MatchStats[] } } = {};
+
+  matches.forEach(match => {
+    const matchDate = match.timestamp.toDate();
+    const year = matchDate.getFullYear().toString();
+    const tournament = match.tournament || "Default Tournament"; // Use actual tournament name or default
+
+    if (!groupedMatches[year]) {
+      groupedMatches[year] = {};
+    }
+
+    if (!groupedMatches[year][tournament]) {
+      groupedMatches[year][tournament] = [];
+    }
+
+    groupedMatches[year][tournament].push(match);
+  });
+
+  return groupedMatches;
 }

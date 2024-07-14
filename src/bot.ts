@@ -1,7 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
-import { registerMe, sendMyStats, sendOtherPlayerStats, sendPlayerRatings } from './actions';
+import { getActivity, registerMe, sendMyStats, sendOtherPlayerStats, sendPlayerRatings } from './actions';
 import { calculateEloRating } from './elo';
-import { getPlayer, getPlayerByUsername, updatePlayerProfiles } from './persistance/firebase';
+import { getCurrentTournament, getPlayer, getPlayerByUsername, updatePlayerProfiles } from './persistance/firebase';
 import { createAlreadyRegisteredMessage, createIntroMessage, createIntroRegisteredMessage, createMatchReportInfoMessage, createMatchReportMessage, createRegisteredMessage } from './common/message-builder';
 import { calculateMatchResult } from './common/helpers';
 
@@ -64,6 +64,26 @@ bot.onText(/\/profile(@\w+)?/, async (msg, match) => {
   } else {
     await sendMyStats(bot, chatId, messageThreadId, userId);
   }
+
+});
+
+bot.onText(/\/activity(@\w+)?/, async (msg, match) => {
+  console.log('/activity by', msg.from?.username, match?.toString());
+
+  const chatId = msg.chat.id;
+  const userId = msg.from?.id || 0;
+  const messageThreadId = msg.message_thread_id ?? 0;
+
+  let playerUsername = '';
+
+  if (match && match[1] && match[1] !== '@tennis_lisboa_bot') {
+    playerUsername = match[1].slice(1); // Remove "@" symbol
+    var player = await getPlayerByUsername(playerUsername);
+    await getActivity(bot, chatId, messageThreadId, player?.telegramId ?? 0);
+    return;
+  }
+
+  await getActivity(bot, chatId, messageThreadId, userId);
 
 });
 

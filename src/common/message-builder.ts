@@ -1,4 +1,5 @@
 import { EloCalculationResult } from '../elo';
+import { groupMatchesByYearAndTournament } from './helpers';
 import { MatchStats, Player } from './models';
 
 const cheatsheet = `Here’s a quick cheatsheet to get you started:
@@ -48,6 +49,35 @@ export function createAlreadyRegisteredMessage (name: string): string {
 
     You're already registered. ${cheatsheet}`
   )
+
+  return message;
+}
+
+export function createActivityMessage (player: Player): string {
+  const groupedMatches = groupMatchesByYearAndTournament(player.matches);
+
+  console.log(groupedMatches);
+
+  let activityBlock = '';
+  for (const year in groupedMatches) {
+    activityBlock += `*${year}*\n\n`;
+    for (const tournament in groupedMatches[year]) {
+      activityBlock += `🏆 *${tournament}*\n\n`;
+      groupedMatches[year][tournament].forEach(match => {
+        const opponentName = match.opponent.name;
+        const score = match.score;
+        const result = match.win ? "🟢" : "🔴";
+        activityBlock += `🔹 ${opponentName} ${result} ${score}\n`;
+      });
+      activityBlock += "\n";
+    }
+  }
+
+  const message = multilineMessage(`
+    🎲 *Activity* / ${player.name}
+
+    ${activityBlock ? activityBlock: '🎯 No matches found for the player.'}`
+  );
 
   return message;
 }

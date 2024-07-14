@@ -14,14 +14,15 @@ export interface Player {
 }
 
 export interface MatchStats {
-  timestamp: Date,
+  timestamp: any,
   ratingChange: number,
   winProbability: number,
   score: string,
   win: boolean,
   setsWon: number,
   setsLost: number,
-  opponent: Player
+  opponent: Player,
+  tournament: string
 }
 
 export function createDefaultPlayer(name: string, telegramId: number, telegramUsername: string | undefined): Player {
