@@ -1,7 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { getActivity, registerMe, sendMyStats, sendOtherPlayerStats, sendPlayerRatings } from './actions';
 import { calculateEloRating } from './elo';
-import { getCurrentTournament, getPlayer, getPlayerByUsername, updatePlayerProfiles } from './persistance/firebase';
+import { getPlayer, getPlayerByUsername, updatePlayerProfiles } from './persistance/firebase';
 import { createAlreadyRegisteredMessage, createIntroMessage, createIntroRegisteredMessage, createMatchReportInfoMessage, createMatchReportMessage, createRegisteredMessage } from './common/message-builder';
 import { calculateMatchResult } from './common/helpers';
 
